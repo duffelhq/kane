@@ -1,5 +1,10 @@
 defmodule Kane.Subscription do
-  defstruct name: nil, topic: nil, ack_deadline: 10, filter: nil
+  defstruct name: nil,
+    topic: nil,
+    ack_deadline: 10,
+    filter: nil,
+    expires_in: nil,
+    message_retention_duration: nil
 
   alias Kane.Topic
   alias Kane.Message
@@ -21,27 +26,29 @@ defmodule Kane.Subscription do
 
   defp create_subscription_path(project_id, subscription), do: full_name(subscription, project_id)
 
-  defp create_data(project_id, %__MODULE__{
-         ack_deadline: ack,
-         topic: %Topic{} = topic,
-         filter: nil
-       }) do
-    %{
-      "topic" => Topic.full_name(topic, project_id),
-      "ackDeadlineSeconds" => ack
-    }
-  end
+  defp create_data(project_id, sub) do
+    sub
+    |> Map.from_struct()
+    |> Enum.map(fn
+      {:topic, topic} ->
+        {"topic", Topic.full_name(topic, project_id)}
 
-  defp create_data(project_id, %__MODULE__{
-         ack_deadline: ack,
-         topic: %Topic{} = topic,
-         filter: filter
-       }) do
-    %{
-      "topic" => Topic.full_name(topic, project_id),
-      "ackDeadlineSeconds" => ack,
-      "filter" => filter
-    }
+      {:ack_deadline, ack} ->
+        {"ackDeadlineSeconds", ack}
+
+      {:filter, filter} when is_binary(filter) ->
+        {"filter", filter}
+
+      {:expires_in, expires_in} when is_integer(expires_in) ->
+        {"expirationPolicy", %{"ttl" => "#{expires_in}s"}}
+
+      {:message_retention_duration, retention} when is_integer(retention) ->
+        {"messageRetentionDuration", "#{retention}s"}
+
+      {key_to_drop, _v} -> {key_to_drop, nil}
+    end)
+    |> Enum.reject(fn {_k, value} -> is_nil(value) end)
+    |> Map.new()
   end
 
   @doc """
@@ -219,8 +226,18 @@ defmodule Kane.Subscription do
       name: strip!(project_id, subscription_name),
       ack_deadline: Map.get(data, "ackDeadlineSeconds"),
       topic: %Topic{name: Topic.strip!(project_id, topic_name)},
-      filter: Map.get(data, "filter")
+      filter: Map.get(data, "filter"),
+      message_retention_duration: data |> Map.get("messageRetentionDuration") |> parse_seconds(),
+      expires_in: data |> get_in(["expirationPolicy", "ttl"]) |> parse_seconds()
     }
+  end
+
+  def parse_seconds(nil), do: nil
+
+  def parse_seconds(string) when is_binary(string) do
+    {seconds, "s"} = Integer.parse(string)
+
+    seconds
   end
 
   defp http_options(options) do
