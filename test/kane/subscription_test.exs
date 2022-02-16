@@ -7,8 +7,7 @@ defmodule Kane.SubscriptionTest do
   setup do
     bypass = Bypass.open()
     Application.put_env(:kane, :endpoint, "http://localhost:#{bypass.port}")
-    {:ok, project} = Goth.Config.get(:project_id)
-    {:ok, bypass: bypass, project: project}
+    {:ok, bypass: bypass, project: Kane.project()}
   end
 
   test "generating the create path", %{project: project} do

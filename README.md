@@ -23,6 +23,13 @@ config :goth,
   json: "path/to/google/json/creds.json" |> File.read!
 ```
 
+If you are configuring Goth with credentials for multiple accounts, you need to specify which one to use with Kane:
+
+```elixir
+config :kane,
+  account: "some-account@some-project.iam.gserviceaccount.com"
+```
+
 3. Ensure Kane is started before your application:
 
 ```elixir
