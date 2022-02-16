@@ -34,7 +34,12 @@ defmodule Kane.Client do
   defp token_mod, do: Application.get_env(:kane, :token, Goth.Token)
 
   defp auth_header do
-    {:ok, token} = token_mod().for_scope(Kane.oauth_scope())
+    {:ok, token} =
+      case Application.get_env(:kane, :account) do
+        nil -> token_mod().for_scope(Kane.oauth_scope())
+        account -> token_mod().for_scope({account, Kane.oauth_scope()})
+      end
+
     {"Authorization", "#{token.type} #{token.token}"}
   end
 

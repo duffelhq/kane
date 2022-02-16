@@ -39,11 +39,14 @@ defmodule Kane.MessageTest do
   end
 
   test "publishing a message", %{bypass: bypass} do
-    {:ok, project} = Goth.Config.get(:project_id)
     topic = "publish"
 
     Bypass.expect(bypass, fn conn ->
-      assert Regex.match?(~r{/projects/#{project}/topics/#{topic}:publish}, conn.request_path)
+      assert Regex.match?(
+               ~r{/projects/#{Kane.project()}/topics/#{topic}:publish},
+               conn.request_path
+             )
+
       Plug.Conn.resp(conn, 201, ~s({"messageIds": [ "19916711285" ]}))
     end)
 
@@ -53,12 +56,14 @@ defmodule Kane.MessageTest do
   end
 
   test "publishing multiple messages", %{bypass: bypass} do
-    {:ok, project} = Goth.Config.get(:project_id)
     topic = "publish-multi"
     ids = ["hello", "hi", "howdy"]
 
     Bypass.expect(bypass, fn conn ->
-      assert Regex.match?(~r{/projects/#{project}/topics/#{topic}:publish}, conn.request_path)
+      assert Regex.match?(
+               ~r{/projects/#{Kane.project()}/topics/#{topic}:publish},
+               conn.request_path
+             )
 
       Plug.Conn.resp(
         conn,

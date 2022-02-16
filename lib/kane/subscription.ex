@@ -150,12 +150,7 @@ defmodule Kane.Subscription do
     }
   end
 
-  defp project do
-    {:ok, project} = Goth.Config.get(:project_id)
-    project
-  end
-
-  defp find_path, do: "projects/#{project()}/subscriptions"
+  defp find_path, do: "projects/#{Kane.project()}/subscriptions"
   defp find_path(subscription), do: "#{find_path()}/#{strip!(subscription)}"
 
   def path(%__MODULE__{name: name}, kind), do: path(name, kind)
@@ -172,8 +167,7 @@ defmodule Kane.Subscription do
   def full_name(%__MODULE__{name: name}), do: full_name(name)
 
   def full_name(name) do
-    {:ok, project} = Goth.Config.get(:project_id)
-    "projects/#{project}/subscriptions/#{name}"
+    "projects/#{Kane.project()}/subscriptions/#{name}"
   end
 
   def strip!(name), do: String.replace(name, ~r(^#{find_path()}/?), "")
